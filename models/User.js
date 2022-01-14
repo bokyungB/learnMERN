@@ -1,6 +1,8 @@
 const mongoose = require('mongoose');
-// const bcrypt = require('bcrypt');
-// const saltRounds = 10;
+const bcrypt = require('bcrypt');
+const saltRounds = 10;
+//10자리인 salt 생성
+
 // const jwt = require('jsonwebtoken');
 // const moment = require("moment");
 
@@ -35,25 +37,28 @@ const userSchema = mongoose.Schema({
     }
 })
 
-
-// userSchema.pre('save', function( next ) {
-//     var user = this;
-    
-//     if(user.isModified('password')){    
-//         // console.log('password changed')
-//         bcrypt.genSalt(saltRounds, function(err, salt){
-//             if(err) return next(err);
-    
-//             bcrypt.hash(user.password, salt, function(err, hash){
-//                 if(err) return next(err);
-//                 user.password = hash 
-//                 next()
-//             })
-//         })
-//     } else {
-//         next()
-//     }
-// });
+// index.js user.save() save하기 전에 뭘한다는 것임. mongoose 기능
+// pre가 다 끝나면 user.save가 작동해야함.
+userSchema.pre('save', function( next ) {
+    var user = this;
+    // usser는 위의 userSchema를 가리킴.
+    // 비밀번호를 바꿀때만 암호화해줘야하기 때문에 아래 조건을 걸어줌.
+    if(user.isModified('password')){    
+        // console.log('password changed')
+        bcrypt.genSalt(saltRounds, function(err, salt){
+            if(err) return next(err);
+            // request body를 모델에 넣었으니까,userSchema 에 password를 가져오면 됨. user에 userSchema 할당됨.
+            bcrypt.hash(user.password, salt, function(err, hash){
+                if(err) return next(err);
+                user.password = hash 
+                next()
+            })
+        })
+    } else {
+        next()
+    }
+    //만약에 비밀번호를 바꾸지 않을 때는 next를 해줘야 이 함수에 들어온 이후에 나갈 수 있음. 아니면 이 함수안에 머물게 됨.
+});
 
 // userSchema.methods.comparePassword = function(plainPassword,cb){
 //     bcrypt.compare(plainPassword, this.password, function(err, isMatch){
